@@ -1,0 +1,915 @@
+import { useState, useEffect, useRef, useCallback } from "react";
+import { motion, AnimatePresence, useSpring, useMotionValue } from "framer-motion";
+
+// ─── CURRICULUM DATA ────────────────────────────────────────────────────────
+const CURRICULUM = [
+  {
+    id: "html",
+    label: "HTML",
+    color: "#E34F26",
+    icon: "⟨/⟩",
+    modules: [
+      {
+        id: "html-1", title: "Pengenalan HTML", duration: "15 min",
+        theory: `## Apa itu HTML?\n\nHTML (HyperText Markup Language) adalah bahasa markup standar untuk membuat halaman web. HTML mendeskripsikan **struktur** dari halaman web menggunakan elemen-elemen yang merupakan blok pembangun halaman HTML.\n\n### Struktur Dasar\n\nSetiap dokumen HTML memiliki struktur dasar yang harus diikuti:\n\n- \`<!DOCTYPE html>\` — deklarasi tipe dokumen\n- \`<html>\` — elemen root\n- \`<head>\` — metadata dokumen\n- \`<body>\` — konten yang terlihat\n\n### Elemen dan Tag\n\nElemen HTML didefinisikan oleh **tag pembuka**, **konten**, dan **tag penutup**:\n\n\`\`\`html\n<tagname>Konten di sini...</tagname>\n\`\`\`\n\nBeberapa elemen tidak memiliki konten dan disebut **void elements**, seperti \`<br>\`, \`<img>\`, dan \`<input>\`.`,
+        code: `<!DOCTYPE html>\n<html lang="id">\n<head>\n  <meta charset="UTF-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>Halaman Pertamaku</title>\n</head>\n<body>\n  <h1>Halo, Dunia! 👋</h1>\n  <p>Ini adalah paragraf pertamaku.</p>\n  <p>HTML itu <strong>mudah</strong> dan <em>menyenangkan</em>!</p>\n</body>\n</html>`,
+        quiz: {
+          question: "Elemen apa yang berfungsi sebagai 'root' dari seluruh halaman HTML?",
+          options: ["<body>", "<html>", "<head>", "<root>"],
+          correct: 1
+        }
+      },
+      {
+        id: "html-2", title: "Tag Teks & Heading", duration: "12 min",
+        theory: `## Heading dan Paragraf\n\nHTML menyediakan 6 level heading dari \`<h1>\` hingga \`<h6>\`. Heading \`<h1>\` adalah yang paling penting dan paling besar, sementara \`<h6>\` adalah yang terkecil.\n\n### Elemen Teks Penting\n\n| Tag | Fungsi |\n|-----|--------|\n| \`<h1>–<h6>\` | Judul / heading |\n| \`<p>\` | Paragraf teks |\n| \`<strong>\` | Teks tebal (penting) |\n| \`<em>\` | Teks miring (penekanan) |\n| \`<span>\` | Inline container |\n| \`<br>\` | Line break |\n\n### Best Practice\n\nGunakan hanya **satu \`<h1>\`** per halaman untuk SEO yang baik. Heading harus membentuk hierarki yang logis.`,
+        code: `<!DOCTYPE html>\n<html lang="id">\n<head>\n  <title>Heading & Teks</title>\n</head>\n<body>\n  <h1>Heading Level 1 — Judul Utama</h1>\n  <h2>Heading Level 2 — Sub Judul</h2>\n  <h3>Heading Level 3 — Sub-sub Judul</h3>\n\n  <p>Ini adalah paragraf biasa. Teks bisa dibuat\n  <strong>tebal</strong> atau <em>miring</em>.</p>\n\n  <p>Baris ini akan<br>dipotong di sini.</p>\n\n  <p>Teks <span style="color:coral">berwarna</span> menggunakan span.</p>\n</body>\n</html>`,
+        quiz: {
+          question: "Tag HTML mana yang digunakan untuk teks tebal yang memiliki makna penting?",
+          options: ["<b>", "<bold>", "<strong>", "<thick>"],
+          correct: 2
+        }
+      },
+      {
+        id: "html-3", title: "Link & Gambar", duration: "18 min",
+        theory: `## Membuat Link dan Menampilkan Gambar\n\n### Hyperlink \`<a>\`\n\nLink dibuat dengan tag \`<a>\` dan atribut \`href\` yang menentukan tujuan link:\n\n\`\`\`html\n<a href="https://google.com">Kunjungi Google</a>\n\`\`\`\n\n**Atribut penting:**\n- \`href\` — URL tujuan\n- \`target="_blank"\` — buka di tab baru\n- \`rel="noopener"\` — keamanan saat target blank\n\n### Gambar \`<img>\`\n\nGambar ditampilkan dengan tag \`<img>\` (void element):\n\n\`\`\`html\n<img src="gambar.jpg" alt="Deskripsi gambar">\n\`\`\`\n\n**Selalu sertakan atribut \`alt\`** untuk aksesibilitas dan SEO!`,
+        code: `<!DOCTYPE html>\n<html lang="id">\n<body>\n  <!-- Link biasa -->\n  <a href="https://developer.mozilla.org">\n    MDN Web Docs\n  </a>\n\n  <!-- Link buka tab baru -->\n  <a href="https://github.com" \n     target="_blank" \n     rel="noopener noreferrer">\n    GitHub (tab baru) 🔗\n  </a>\n\n  <!-- Gambar -->\n  <img \n    src="https://picsum.photos/300/200" \n    alt="Gambar placeholder acak"\n    width="300"\n    height="200"\n  />\n\n  <!-- Link berisi gambar -->\n  <a href="https://picsum.photos">\n    <img src="https://picsum.photos/150/100" \n         alt="Klik gambar ini" />\n  </a>\n</body>\n</html>`,
+        quiz: {
+          question: "Atribut apa yang WAJIB ada di tag <img> untuk aksesibilitas?",
+          options: ["src", "alt", "width", "title"],
+          correct: 1
+        }
+      }
+    ]
+  },
+  {
+    id: "css",
+    label: "CSS",
+    color: "#264DE4",
+    icon: "{ }",
+    modules: [
+      {
+        id: "css-1", title: "Pengenalan CSS", duration: "20 min",
+        theory: `## Apa itu CSS?\n\nCSS (Cascading Style Sheets) adalah bahasa yang digunakan untuk **mendeskripsikan presentasi** (tampilan) dari dokumen HTML. CSS mengontrol warna, font, spacing, layout, dan animasi.\n\n### Cara Menulis CSS\n\nCSS terdiri dari **selector** dan **declaration block**:\n\n\`\`\`css\nselector {\n  property: value;\n}\n\`\`\`\n\n### 3 Cara Menyisipkan CSS\n\n1. **Inline** — langsung di atribut \`style\`\n2. **Internal** — di dalam tag \`<style>\` di \`<head>\`\n3. **External** — file \`.css\` terpisah (best practice)\n\n### Selector Dasar\n\n| Selector | Contoh | Target |\n|----------|--------|--------|\n| Element | \`p\` | Semua \`<p>\` |\n| Class | \`.merah\` | Elemen dengan \`class="merah"\` |\n| ID | \`#header\` | Elemen dengan \`id="header"\` |`,
+        code: `<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    /* Selector elemen */\n    body {\n      font-family: 'Segoe UI', sans-serif;\n      background: #f0f4f8;\n      margin: 0;\n      padding: 20px;\n    }\n\n    /* Selector class */\n    .kartu {\n      background: white;\n      border-radius: 12px;\n      padding: 20px;\n      box-shadow: 0 4px 12px rgba(0,0,0,0.1);\n      margin-bottom: 16px;\n    }\n\n    /* Selector ID */\n    #judul {\n      color: #264DE4;\n      font-size: 28px;\n    }\n\n    .highlight {\n      background: #fef3c7;\n      padding: 2px 8px;\n      border-radius: 4px;\n    }\n  </style>\n</head>\n<body>\n  <h1 id="judul">Belajar CSS 🎨</h1>\n\n  <div class="kartu">\n    <p>Ini kartu dengan <span class="highlight">highlight</span>.</p>\n  </div>\n</body>\n</html>`,
+        quiz: {
+          question: "Simbol apa yang digunakan untuk selector CLASS dalam CSS?",
+          options: ["#", ".", "*", "@"],
+          correct: 1
+        }
+      },
+      {
+        id: "css-2", title: "Box Model", duration: "22 min",
+        theory: `## CSS Box Model\n\nSetiap elemen HTML adalah sebuah kotak (box). Box model CSS mendefinisikan **4 area** di setiap elemen:\n\n\`\`\`\n┌─────────────────────────┐\n│         MARGIN          │\n│  ┌───────────────────┐  │\n│  │      BORDER       │  │\n│  │  ┌─────────────┐  │  │\n│  │  │   PADDING   │  │  │\n│  │  │  ┌───────┐  │  │  │\n│  │  │  │CONTENT│  │  │  │\n│  │  │  └───────┘  │  │  │\n│  │  └─────────────┘  │  │\n│  └───────────────────┘  │\n└─────────────────────────┘\n\`\`\`\n\n### box-sizing\n\nGunakan \`box-sizing: border-box\` agar padding dan border **tidak menambah** lebar total elemen — ini adalah best practice modern!`,
+        code: `<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    * { box-sizing: border-box; margin: 0; padding: 0; }\n\n    body { \n      padding: 30px; \n      background: #1a1a2e;\n      font-family: sans-serif;\n    }\n\n    .box-demo {\n      width: 250px;\n      height: 120px;\n      content: "";\n      /* Box Model Properties */\n      padding: 20px;\n      border: 4px solid #e94560;\n      margin: 24px auto;\n      background: #16213e;\n      color: #eee;\n      display: flex;\n      align-items: center;\n      justify-content: center;\n      border-radius: 8px;\n    }\n\n    .box-outer {\n      background: #0f3460;\n      padding: 20px;\n      margin: 10px;\n      border-radius: 12px;\n      color: white;\n    }\n  </style>\n</head>\n<body>\n  <div class="box-outer">\n    Margin: jarak luar\n    <div class="box-demo">\n      Content + Padding + Border\n    </div>\n  </div>\n</body>\n</html>`,
+        quiz: {
+          question: "Properti CSS mana yang mengatur jarak DALAM border sebuah elemen?",
+          options: ["margin", "spacing", "padding", "border-gap"],
+          correct: 2
+        }
+      },
+      {
+        id: "css-3", title: "Flexbox Layout", duration: "25 min",
+        theory: `## Flexbox — Layout Modern\n\nFlexbox adalah metode layout 1D yang kuat untuk mendistribusikan dan menyelaraskan item dalam sebuah container.\n\n### Mengaktifkan Flexbox\n\n\`\`\`css\n.container {\n  display: flex;\n}\n\`\`\`\n\n### Properti Container Utama\n\n| Properti | Nilai Umum |\n|----------|------------|\n| \`flex-direction\` | row, column |\n| \`justify-content\` | center, space-between, space-around |\n| \`align-items\` | center, flex-start, flex-end, stretch |\n| \`flex-wrap\` | wrap, nowrap |\n| \`gap\` | ukuran spasi antar item |\n\n### Properti Item\n\n- \`flex-grow\` — seberapa besar item tumbuh\n- \`flex-shrink\` — seberapa kecil item menyusut\n- \`flex-basis\` — ukuran dasar item\n- \`align-self\` — override alignment khusus item`,
+        code: `<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    body { margin: 0; padding: 20px; background: #0d1117; color: #c9d1d9; font-family: sans-serif; }\n\n    .flex-container {\n      display: flex;\n      justify-content: space-between;\n      align-items: center;\n      gap: 16px;\n      background: #161b22;\n      padding: 20px;\n      border-radius: 12px;\n      margin-bottom: 20px;\n    }\n\n    .flex-item {\n      background: #21262d;\n      padding: 20px;\n      border-radius: 8px;\n      border: 1px solid #30363d;\n      text-align: center;\n      flex: 1;\n    }\n\n    .flex-item:hover {\n      border-color: #58a6ff;\n      color: #58a6ff;\n    }\n  </style>\n</head>\n<body>\n  <div class="flex-container">\n    <div class="flex-item">Item 1</div>\n    <div class="flex-item">Item 2</div>\n    <div class="flex-item">Item 3</div>\n  </div>\n</body>\n</html>`,
+        quiz: {
+          question: "Properti mana yang digunakan untuk mengatur jarak antar flex item secara horizontal?",
+          options: ["spacing", "gap", "margin-inline", "flex-space"],
+          correct: 1
+        }
+      }
+    ]
+  },
+  {
+    id: "js",
+    label: "JavaScript",
+    color: "#F7DF1E",
+    icon: "JS",
+    modules: [
+      {
+        id: "js-1", title: "Variabel & Tipe Data", duration: "20 min",
+        theory: `## Variabel di JavaScript\n\nVariabel adalah container untuk menyimpan data. JavaScript modern menggunakan \`let\` dan \`const\`:\n\n\`\`\`js\nconst nama = "Budi";     // Tidak bisa diubah\nlet umur = 25;           // Bisa diubah\n\`\`\`\n\n### Tipe Data Primitif\n\n| Tipe | Contoh |\n|------|--------|\n| String | \`"Hello"\`, \`'World'\` |\n| Number | \`42\`, \`3.14\` |\n| Boolean | \`true\`, \`false\` |\n| null | \`null\` (sengaja kosong) |\n| undefined | \`undefined\` (belum diberi nilai) |\n\n### Tipe Data Kompleks\n\n- **Array** — daftar nilai: \`[1, 2, 3]\`\n- **Object** — pasangan key-value: \`{ nama: "Budi", umur: 25 }\`\n\n### Template Literal\n\n\`\`\`js\nconst salam = \`Halo, \${nama}! Kamu berumur \${umur} tahun.\`;\n\`\`\``,
+        code: `// ─── Variabel ───────────────────────\nconst nama = "Budi";\nlet umur = 25;\nlet aktif = true;\n\n// Template literal\nconst salam = \`Halo, \${nama}!\`;\nconsole.log(salam); // "Halo, Budi!"\n\n// ─── Array ──────────────────────────\nconst bahasa = ["HTML", "CSS", "JavaScript"];\nconsole.log(bahasa[0]); // "HTML"\nconsole.log(bahasa.length); // 3\n\n// ─── Object ─────────────────────────\nconst pengguna = {\n  nama: "Citra",\n  umur: 22,\n  hobi: ["coding", "desain"],\n  aktif: true\n};\n\nconsole.log(pengguna.nama);    // "Citra"\nconsole.log(pengguna["umur"]); // 22\nconsole.log(pengguna.hobi[0]); // "coding"\n\n// ─── typeof ─────────────────────────\nconsole.log(typeof nama);  // "string"\nconsole.log(typeof umur);  // "number"\nconsole.log(typeof aktif); // "boolean"`,
+        quiz: {
+          question: "Keyword mana yang digunakan untuk mendeklarasikan variabel yang TIDAK bisa diubah nilainya?",
+          options: ["let", "var", "const", "fixed"],
+          correct: 2
+        }
+      },
+      {
+        id: "js-2", title: "Fungsi & Arrow Function", duration: "25 min",
+        theory: `## Fungsi di JavaScript\n\nFungsi adalah blok kode yang dapat dipanggil berulang kali. Ada beberapa cara menulis fungsi:\n\n### 1. Function Declaration\n\n\`\`\`js\nfunction sapa(nama) {\n  return \`Halo, \${nama}!\`;\n}\n\`\`\`\n\n### 2. Function Expression\n\n\`\`\`js\nconst sapa = function(nama) {\n  return \`Halo, \${nama}!\`;\n};\n\`\`\`\n\n### 3. Arrow Function (ES6+)\n\n\`\`\`js\nconst sapa = (nama) => \`Halo, \${nama}!\`;\n\`\`\`\n\nArrow function lebih ringkas dan sering digunakan dalam kode modern. Jika hanya ada **satu parameter**, tanda kurung bisa dihilangkan. Jika body hanya **satu expression**, \`return\` bisa dihilangkan.`,
+        code: `// ─── Function Declaration ───────────\nfunction tambah(a, b) {\n  return a + b;\n}\nconsole.log(tambah(3, 4)); // 7\n\n// ─── Arrow Function ──────────────────\nconst kali = (a, b) => a * b;\nconsole.log(kali(3, 4)); // 12\n\n// ─── Default Parameter ───────────────\nconst sapa = (nama = "Tamu") => {\n  return \`Selamat datang, \${nama}!\`;\n};\nconsole.log(sapa());        // "Selamat datang, Tamu!"\nconsole.log(sapa("Rina"));  // "Selamat datang, Rina!"\n\n// ─── Higher-order Function ───────────\nconst angka = [1, 2, 3, 4, 5];\n\nconst genap = angka.filter(n => n % 2 === 0);\nconsole.log(genap); // [2, 4]\n\nconst kuadrat = angka.map(n => n ** 2);\nconsole.log(kuadrat); // [1, 4, 9, 16, 25]\n\nconst jumlah = angka.reduce((acc, n) => acc + n, 0);\nconsole.log(jumlah); // 15`,
+        quiz: {
+          question: "Manakah penulisan arrow function yang benar untuk fungsi dengan satu parameter?",
+          options: ["(x) => { x * 2 }", "x => x * 2", "function x => x * 2", "arrow(x) { return x * 2 }"],
+          correct: 1
+        }
+      },
+      {
+        id: "js-3", title: "DOM Manipulation", duration: "30 min",
+        theory: `## Manipulasi DOM\n\nDOM (Document Object Model) adalah representasi HTML sebagai pohon objek JavaScript. Kita bisa mengubah halaman web secara dinamis!\n\n### Memilih Elemen\n\n\`\`\`js\n// Pilih satu elemen\nconst judul = document.querySelector('#judul');\nconst tombol = document.querySelector('.btn');\n\n// Pilih banyak elemen\nconst paragraf = document.querySelectorAll('p');\n\`\`\`\n\n### Mengubah Konten & Style\n\n\`\`\`js\nelemen.textContent = "Teks baru";    // Ubah teks\nelemen.innerHTML = "<b>Bold</b>";    // Ubah HTML\nelemen.style.color = "red";          // Ubah style\nelemen.classList.add("aktif");       // Tambah class\n\`\`\`\n\n### Event Listener\n\n\`\`\`js\ntombol.addEventListener('click', () => {\n  console.log('Diklik!');\n});\n\`\`\``,
+        code: `<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    body { font-family: sans-serif; padding: 20px; }\n    #kotak {\n      width: 150px; height: 150px;\n      background: #3b82f6;\n      border-radius: 12px;\n      display: flex; align-items: center;\n      justify-content: center;\n      color: white; font-weight: bold;\n      cursor: pointer;\n      transition: all 0.3s;\n    }\n    #counter { font-size: 48px; margin: 20px 0; }\n  </style>\n</head>\n<body>\n  <div id="kotak">Klik aku! 👆</div>\n  <div id="counter">0</div>\n  <button onclick="reset()">Reset</button>\n\n  <script>\n    let count = 0;\n    const kotak = document.querySelector('#kotak');\n    const counter = document.querySelector('#counter');\n\n    kotak.addEventListener('click', () => {\n      count++;\n      counter.textContent = count;\n      // Warna berubah tiap klik\n      const warna = [\n        '#3b82f6','#10b981','#f59e0b','#ef4444'\n      ];\n      kotak.style.background = warna[count % warna.length];\n    });\n\n    function reset() {\n      count = 0;\n      counter.textContent = 0;\n      kotak.style.background = '#3b82f6';\n    }\n  <\/script>\n</body>\n</html>`,
+        quiz: {
+          question: "Method DOM mana yang digunakan untuk memilih elemen berdasarkan selector CSS?",
+          options: ["getElementById()", "querySelector()", "findElement()", "selectBy()"],
+          correct: 1
+        }
+      }
+    ]
+  }
+];
+
+// ─── SYNTAX HIGHLIGHTER ─────────────────────────────────────────────────────
+const TOKENS = [
+  { re: /(\/\/.*$)/gm, cls: "token-comment" },
+  { re: /(\/\*[\s\S]*?\*\/)/g, cls: "token-comment" },
+  { re: /(&lt;!--[\s\S]*?--&gt;)/g, cls: "token-comment" },
+  { re: /\b(const|let|var|function|return|if|else|for|while|class|import|export|default|new|this|typeof|null|undefined|true|false|async|await|=&gt;)\b/g, cls: "token-keyword" },
+  { re: /(&lt;\/?[a-zA-Z][a-zA-Z0-9]*)/g, cls: "token-tag" },
+  { re: /(\/?&gt;)/g, cls: "token-tag" },
+  { re: /\b([a-zA-Z]+)(?=\s*\()/g, cls: "token-function" },
+  { re: /("[^"]*"|'[^']*'|`[^`]*`)/g, cls: "token-string" },
+  { re: /\b(\d+\.?\d*)\b/g, cls: "token-number" },
+  { re: /([a-zA-Z-]+)(?=\s*:(?!:))/g, cls: "token-property" },
+];
+
+function syntaxHighlight(code) {
+  let escaped = code
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+  TOKENS.forEach(({ re, cls }) => {
+    escaped = escaped.replace(re, `<span class="${cls}">$1</span>`);
+  });
+  return escaped;
+}
+
+// ─── MARKDOWN PARSER ────────────────────────────────────────────────────────
+function parseMarkdown(md) {
+  return md
+    .replace(/^### (.*$)/gm, '<h3 class="md-h3">$1</h3>')
+    .replace(/^## (.*$)/gm, '<h2 class="md-h2">$1</h2>')
+    .replace(/^# (.*$)/gm, '<h1 class="md-h1">$1</h1>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/`([^`]+)`/g, '<code class="md-code">$1</code>')
+    .replace(/```[\w]*\n([\s\S]*?)```/g, (_, code) =>
+      `<pre class="md-pre"><code>${syntaxHighlight(code.trim())}</code></pre>`)
+    .replace(/^\| (.*) \|$/gm, (_, row) => {
+      const cells = row.split(' | ').map(c => c.trim());
+      return `<tr>${cells.map(c => c.startsWith('--') ? '' : `<td>${c}</td>`).join('')}</tr>`;
+    })
+    .replace(/(<tr>.*<\/tr>\n?)+/g, m => `<table class="md-table"><tbody>${m}</tbody></table>`)
+    .replace(/<tr><\/tr>\n?/g, '')
+    .replace(/^\- (.*$)/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g, m => `<ul class="md-ul">${m}</ul>`)
+    .split('\n\n')
+    .map(p => p.startsWith('<') ? p : `<p class="md-p">${p}</p>`)
+    .join('');
+}
+
+// ─── COMPONENTS ─────────────────────────────────────────────────────────────
+
+function ProgressRing({ progress, size = 36, stroke = 3, color }) {
+  const r = (size - stroke * 2) / 2;
+  const circ = 2 * Math.PI * r;
+  const offset = circ - (progress / 100) * circ;
+  return (
+    <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth={stroke} />
+      <motion.circle
+        cx={size / 2} cy={size / 2} r={r} fill="none"
+        stroke={color} strokeWidth={stroke}
+        strokeLinecap="round"
+        strokeDasharray={circ}
+        initial={{ strokeDashoffset: circ }}
+        animate={{ strokeDashoffset: offset }}
+        transition={{ duration: 1, ease: "easeOut" }}
+      />
+    </svg>
+  );
+}
+
+function QuizModal({ quiz, onClose, onComplete }) {
+  const [selected, setSelected] = useState(null);
+  const [submitted, setSubmitted] = useState(false);
+  const correct = selected === quiz.correct;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="quiz-overlay"
+      onClick={e => e.target === e.currentTarget && onClose()}
+    >
+      <motion.div
+        initial={{ scale: 0.85, y: 30 }} animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.85, y: 30 }}
+        transition={{ type: "spring", stiffness: 300, damping: 28 }}
+        className="quiz-modal"
+      >
+        <div className="quiz-header">
+          <span className="quiz-badge">Kuis Cepat ⚡</span>
+          <button className="quiz-close" onClick={onClose}>✕</button>
+        </div>
+        <p className="quiz-question">{quiz.question}</p>
+        <div className="quiz-options">
+          {quiz.options.map((opt, i) => (
+            <motion.button
+              key={i}
+              whileHover={!submitted ? { x: 4 } : {}}
+              whileTap={!submitted ? { scale: 0.97 } : {}}
+              onClick={() => !submitted && setSelected(i)}
+              className={`quiz-option ${selected === i ? "selected" : ""} ${submitted ? (i === quiz.correct ? "correct" : selected === i ? "wrong" : "") : ""}`}
+            >
+              <span className="quiz-opt-label">{String.fromCharCode(65 + i)}</span>
+              {opt}
+            </motion.button>
+          ))}
+        </div>
+        {!submitted ? (
+          <motion.button
+            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+            className="quiz-submit" disabled={selected === null}
+            onClick={() => setSubmitted(true)}
+          >
+            Cek Jawaban
+          </motion.button>
+        ) : (
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={`quiz-result ${correct ? "correct-result" : "wrong-result"}`}>
+            {correct ? "🎉 Benar! Luar biasa!" : `❌ Kurang tepat. Jawaban yang benar: ${quiz.options[quiz.correct]}`}
+            <motion.button
+              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+              className="quiz-continue"
+              onClick={() => { onComplete(correct); onClose(); }}
+            >
+              {correct ? "Lanjut →" : "Coba lagi nanti"}
+            </motion.button>
+          </motion.div>
+        )}
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
+export default function CodeLearnPlatform() {
+  const [dark, setDark] = useState(true);
+  const [openLangs, setOpenLangs] = useState({ html: true, css: false, js: false });
+  const [activeModule, setActiveModule] = useState(CURRICULUM[0].modules[0]);
+  const [activeLang, setActiveLang] = useState(CURRICULUM[0]);
+  const [progress, setProgress] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("cl_progress") || "{}"); } catch { return {}; }
+  });
+  const [editableCode, setEditableCode] = useState(CURRICULUM[0].modules[0].code);
+  const [previewSrc, setPreviewSrc] = useState("");
+  const [quiz, setQuiz] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const previewRef = useRef(null);
+  const editorRef = useRef(null);
+
+  // Persist progress
+  useEffect(() => {
+    localStorage.setItem("cl_progress", JSON.stringify(progress));
+  }, [progress]);
+
+  // Sync code editor when module changes
+  useEffect(() => {
+    setEditableCode(activeModule.code);
+  }, [activeModule]);
+
+  // Auto-run preview for HTML modules
+  useEffect(() => {
+    const isHtml = editableCode.trim().startsWith("<!") || editableCode.includes("<html");
+    if (isHtml) {
+      const timer = setTimeout(() => setPreviewSrc(editableCode), 600);
+      return () => clearTimeout(timer);
+    } else {
+      setPreviewSrc("");
+    }
+  }, [editableCode]);
+
+  // Progress calculations
+  const allModules = CURRICULUM.flatMap(l => l.modules);
+  const completedCount = allModules.filter(m => progress[m.id]).length;
+  const globalPct = Math.round((completedCount / allModules.length) * 100);
+
+  const langProgress = (lang) => {
+    const mods = lang.modules;
+    const done = mods.filter(m => progress[m.id]).length;
+    return Math.round((done / mods.length) * 100);
+  };
+
+  const markDone = (moduleId) => {
+    setProgress(p => ({ ...p, [moduleId]: true }));
+  };
+
+  const selectModule = (mod, lang) => {
+    setActiveModule(mod);
+    setActiveLang(lang);
+  };
+
+  const totalDuration = activeModule.duration;
+  const isDone = progress[activeModule.id];
+
+  // CSS-in-JS via style tag
+  const theme = {
+    bg: dark ? "#0a0e17" : "#f0f4f8",
+    surface: dark ? "#111827" : "#ffffff",
+    surface2: dark ? "#1a2234" : "#f8fafc",
+    border: dark ? "#1e293b" : "#e2e8f0",
+    text: dark ? "#e2e8f0" : "#1e293b",
+    textMuted: dark ? "#64748b" : "#94a3b8",
+    accent: activeLang.color,
+  };
+
+  return (
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+          --bg: ${theme.bg};
+          --surface: ${theme.surface};
+          --surface2: ${theme.surface2};
+          --border: ${theme.border};
+          --text: ${theme.text};
+          --muted: ${theme.textMuted};
+          --accent: ${theme.accent};
+          --accent-glow: ${theme.accent}33;
+        }
+
+        body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; overflow: hidden; }
+
+        /* ── Layout ── */
+        .app { display: flex; flex-direction: column; height: 100vh; }
+
+        .topbar {
+          display: flex; align-items: center; gap: 16px;
+          padding: 0 20px; height: 56px;
+          background: var(--surface); border-bottom: 1px solid var(--border);
+          flex-shrink: 0; z-index: 20;
+        }
+
+        .logo { font-size: 18px; font-weight: 700; letter-spacing: -0.5px; }
+        .logo span { color: var(--accent); }
+
+        .progress-global {
+          display: flex; align-items: center; gap: 8px; margin-left: auto;
+        }
+        .progress-bar-wrap {
+          width: 120px; height: 4px; background: var(--border); border-radius: 4px; overflow: hidden;
+        }
+        .progress-bar-fill {
+          height: 100%; border-radius: 4px; background: var(--accent);
+          transition: width 0.6s ease;
+        }
+        .progress-pct { font-size: 12px; font-weight: 600; color: var(--muted); }
+
+        .topbar-actions { display: flex; gap: 8px; align-items: center; }
+
+        .icon-btn {
+          width: 34px; height: 34px; border-radius: 8px;
+          border: 1px solid var(--border); background: var(--surface2);
+          color: var(--text); cursor: pointer; display: flex; align-items: center;
+          justify-content: center; font-size: 14px; transition: all 0.2s;
+        }
+        .icon-btn:hover { background: var(--accent); border-color: var(--accent); color: white; }
+
+        .main-layout {
+          display: flex; flex: 1; overflow: hidden;
+        }
+
+        /* ── Sidebar ── */
+        .sidebar {
+          width: 260px; flex-shrink: 0;
+          background: var(--surface); border-right: 1px solid var(--border);
+          overflow-y: auto; overflow-x: hidden;
+          scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+        }
+        .sidebar::-webkit-scrollbar { width: 4px; }
+        .sidebar::-webkit-scrollbar-track { background: transparent; }
+        .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+        .sidebar-section { border-bottom: 1px solid var(--border); }
+
+        .lang-header {
+          display: flex; align-items: center; gap: 10px;
+          padding: 14px 16px; cursor: pointer;
+          transition: background 0.15s; user-select: none;
+        }
+        .lang-header:hover { background: var(--surface2); }
+
+        .lang-badge {
+          width: 30px; height: 30px; border-radius: 6px;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 10px; font-weight: 700; font-family: 'JetBrains Mono', monospace;
+          flex-shrink: 0;
+        }
+
+        .lang-info { flex: 1; }
+        .lang-name { font-size: 13px; font-weight: 600; }
+        .lang-prog-bar { height: 2px; background: var(--border); border-radius: 2px; margin-top: 4px; }
+        .lang-prog-fill { height: 100%; border-radius: 2px; transition: width 0.5s ease; }
+
+        .lang-chevron { font-size: 10px; color: var(--muted); transition: transform 0.2s; }
+        .lang-chevron.open { transform: rotate(180deg); }
+
+        .module-list { padding: 4px 0; }
+        .module-item {
+          display: flex; align-items: center; gap: 10px;
+          padding: 9px 16px 9px 20px; cursor: pointer;
+          transition: background 0.15s; border-left: 2px solid transparent;
+          position: relative;
+        }
+        .module-item:hover { background: var(--surface2); }
+        .module-item.active {
+          background: var(--accent-glow);
+          border-left-color: var(--accent);
+        }
+        .module-dot {
+          width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+          border: 2px solid var(--muted); transition: all 0.2s;
+        }
+        .module-dot.done { background: #10b981; border-color: #10b981; }
+        .module-dot.active { background: var(--accent); border-color: var(--accent); }
+
+        .module-title { font-size: 12.5px; font-weight: 500; flex: 1; line-height: 1.3; }
+        .module-item.active .module-title { color: var(--accent); font-weight: 600; }
+        .module-duration { font-size: 11px; color: var(--muted); flex-shrink: 0; }
+
+        /* ── Content Area ── */
+        .content-area {
+          flex: 1; display: flex; flex-direction: column; overflow: hidden;
+          background: var(--bg);
+        }
+
+        .module-topbar {
+          display: flex; align-items: center; gap: 12px;
+          padding: 12px 20px; background: var(--surface);
+          border-bottom: 1px solid var(--border); flex-shrink: 0;
+        }
+
+        .module-breadcrumb { font-size: 12px; color: var(--muted); }
+        .module-breadcrumb span { color: var(--accent); font-weight: 600; }
+        .module-title-top { font-size: 15px; font-weight: 700; }
+        .module-time { font-size: 12px; color: var(--muted); margin-left: auto; }
+
+        .complete-btn {
+          padding: 6px 14px; border-radius: 8px; border: none;
+          font-size: 12px; font-weight: 600; cursor: pointer;
+          transition: all 0.2s; font-family: 'DM Sans', sans-serif;
+        }
+        .complete-btn.done {
+          background: #10b981; color: white;
+        }
+        .complete-btn.undone {
+          background: var(--accent); color: ${dark ? "#000" : "#fff"};
+        }
+        .complete-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+
+        .quiz-btn {
+          padding: 6px 14px; border-radius: 8px;
+          border: 1px solid var(--border); background: var(--surface2);
+          font-size: 12px; font-weight: 600; cursor: pointer; color: var(--text);
+          transition: all 0.2s; font-family: 'DM Sans', sans-serif;
+        }
+        .quiz-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+        .split-view {
+          display: flex; flex: 1; overflow: hidden;
+        }
+
+        /* ── Theory Panel ── */
+        .theory-panel {
+          flex: 1; overflow-y: auto; padding: 24px;
+          border-right: 1px solid var(--border);
+          scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+        }
+        .theory-panel::-webkit-scrollbar { width: 4px; }
+        .theory-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+        /* Markdown styles */
+        .md-h1 { font-size: 22px; font-weight: 800; margin-bottom: 12px; letter-spacing: -0.5px; }
+        .md-h2 { font-size: 17px; font-weight: 700; margin: 20px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+        .md-h3 { font-size: 14px; font-weight: 700; margin: 16px 0 8px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--accent); }
+        .md-p { font-size: 13.5px; line-height: 1.75; margin-bottom: 10px; color: var(--muted); }
+        .md-code { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: var(--surface2); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border); color: var(--accent); }
+        .md-pre { background: #0d1117; border: 1px solid ${dark ? "#1e293b" : "#e2e8f0"}; border-radius: 10px; padding: 16px; margin: 12px 0; overflow-x: auto; }
+        .md-pre code { font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.6; }
+        .md-ul { margin: 8px 0 12px 20px; }
+        .md-ul li { font-size: 13.5px; color: var(--muted); margin-bottom: 4px; }
+        .md-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 12.5px; }
+        .md-table td { padding: 7px 12px; border: 1px solid var(--border); }
+        .md-table tr:first-child td { background: var(--surface2); font-weight: 600; }
+
+        /* Syntax highlight tokens */
+        .token-comment { color: #6a737d; font-style: italic; }
+        .token-keyword { color: #ff79c6; }
+        .token-tag { color: #50fa7b; }
+        .token-function { color: #8be9fd; }
+        .token-string { color: #f1fa8c; }
+        .token-number { color: #bd93f9; }
+        .token-property { color: #ffb86c; }
+
+        /* ── Code Panel ── */
+        .code-panel {
+          width: 44%; flex-shrink: 0; display: flex; flex-direction: column;
+          background: var(--surface);
+        }
+
+        .code-tabs {
+          display: flex; border-bottom: 1px solid var(--border);
+          padding: 0 16px; gap: 0; flex-shrink: 0;
+        }
+        .code-tab {
+          padding: 10px 14px; font-size: 12px; font-weight: 500;
+          color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent;
+          transition: all 0.15s; background: none; border-left: none; border-right: none; border-top: none;
+          font-family: 'DM Sans', sans-serif;
+        }
+        .code-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+        .code-tab:hover { color: var(--text); }
+
+        .code-editor-wrap { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+
+        .code-editor {
+          flex: 1; padding: 16px; font-family: 'JetBrains Mono', monospace;
+          font-size: 12px; line-height: 1.7; background: #0d1117; color: #c9d1d9;
+          border: none; outline: none; resize: none; width: 100%;
+          tab-size: 2;
+        }
+
+        .preview-wrap { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+        .preview-label {
+          padding: 8px 16px; font-size: 11px; font-weight: 600;
+          color: var(--muted); letter-spacing: 0.5px;
+          background: var(--surface2); border-bottom: 1px solid var(--border);
+          text-transform: uppercase; flex-shrink: 0;
+        }
+        .preview-iframe {
+          flex: 1; width: 100%; border: none; background: white;
+        }
+        .preview-console {
+          flex: 1; padding: 16px; font-family: 'JetBrains Mono', monospace;
+          font-size: 12px; background: #0d1117; color: #c9d1d9;
+          overflow: auto;
+        }
+        .console-line { margin-bottom: 6px; display: flex; gap: 10px; }
+        .console-arrow { color: #50fa7b; }
+
+        /* ── Quiz Modal ── */
+        .quiz-overlay {
+          position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+          z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px;
+        }
+        .quiz-modal {
+          background: var(--surface); border: 1px solid var(--border);
+          border-radius: 16px; padding: 24px; width: 100%; max-width: 480px;
+        }
+        .quiz-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .quiz-badge {
+          background: var(--accent); color: ${dark ? "#000" : "#fff"};
+          font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 20px;
+        }
+        .quiz-close { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; }
+        .quiz-question { font-size: 15px; font-weight: 600; margin-bottom: 16px; line-height: 1.5; }
+        .quiz-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+        .quiz-option {
+          display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+          border: 1px solid var(--border); border-radius: 10px; background: var(--surface2);
+          color: var(--text); cursor: pointer; text-align: left;
+          font-size: 13.5px; font-family: 'DM Sans', sans-serif; transition: all 0.15s;
+        }
+        .quiz-option:hover { border-color: var(--accent); }
+        .quiz-option.selected { border-color: var(--accent); background: var(--accent-glow); }
+        .quiz-option.correct { border-color: #10b981; background: #10b98122; color: #10b981; }
+        .quiz-option.wrong { border-color: #ef4444; background: #ef444422; color: #ef4444; }
+        .quiz-opt-label {
+          width: 24px; height: 24px; border-radius: 6px; background: var(--border);
+          display: flex; align-items: center; justify-content: center;
+          font-size: 11px; font-weight: 700; flex-shrink: 0;
+        }
+        .quiz-submit {
+          width: 100%; padding: 10px; border-radius: 10px; border: none;
+          background: var(--accent); color: ${dark ? "#000" : "#fff"};
+          font-size: 13.5px; font-weight: 700; cursor: pointer;
+          font-family: 'DM Sans', sans-serif; transition: opacity 0.15s;
+        }
+        .quiz-submit:disabled { opacity: 0.4; cursor: not-allowed; }
+        .quiz-result { padding: 12px; border-radius: 10px; font-size: 13.5px; font-weight: 600; }
+        .correct-result { background: #10b98122; color: #10b981; border: 1px solid #10b981; }
+        .wrong-result { background: #ef444422; color: #ef4444; border: 1px solid #ef4444; }
+        .quiz-continue {
+          display: block; margin-top: 10px; padding: 8px 16px;
+          border-radius: 8px; border: none; background: var(--surface2);
+          color: var(--text); font-size: 12.5px; font-weight: 600;
+          cursor: pointer; font-family: 'DM Sans', sans-serif;
+        }
+
+        @media (max-width: 900px) {
+          .sidebar { width: 220px; }
+          .split-view { flex-direction: column; }
+          .code-panel { width: 100%; height: 50%; }
+          .theory-panel { height: 50%; border-right: none; border-bottom: 1px solid var(--border); }
+        }
+
+        @media (max-width: 600px) {
+          .sidebar { position: absolute; z-index: 10; height: calc(100vh - 56px); }
+        }
+      `}</style>
+
+      <div className="app">
+        {/* ── TOPBAR ─────────────────────────────────────── */}
+        <div className="topbar">
+          <button className="icon-btn" onClick={() => setSidebarOpen(v => !v)} title="Toggle sidebar">
+            ☰
+          </button>
+          <div className="logo">Code<span>Learn</span></div>
+
+          <div className="progress-global">
+            <ProgressRing progress={globalPct} color={activeLang.color} />
+            <div>
+              <div style={{ fontSize: 11, color: theme.textMuted, marginBottom: 2 }}>KEMAJUAN</div>
+              <div className="progress-bar-wrap">
+                <motion.div className="progress-bar-fill" animate={{ width: `${globalPct}%` }} />
+              </div>
+            </div>
+            <span className="progress-pct">{globalPct}%</span>
+          </div>
+
+          <div className="topbar-actions">
+            <motion.button
+              whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+              className="icon-btn"
+              onClick={() => setDark(v => !v)}
+              title={dark ? "Light mode" : "Dark mode"}
+            >
+              {dark ? "☀️" : "🌙"}
+            </motion.button>
+          </div>
+        </div>
+
+        {/* ── MAIN ───────────────────────────────────────── */}
+        <div className="main-layout">
+          {/* SIDEBAR */}
+          <AnimatePresence initial={false}>
+            {sidebarOpen && (
+              <motion.div
+                className="sidebar"
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: 260, opacity: 1 }}
+                exit={{ width: 0, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 350, damping: 35 }}
+                style={{ overflow: "hidden" }}
+              >
+                {CURRICULUM.map((lang) => {
+                  const lp = langProgress(lang);
+                  const isOpen = openLangs[lang.id];
+                  return (
+                    <div key={lang.id} className="sidebar-section">
+                      <div
+                        className="lang-header"
+                        onClick={() => setOpenLangs(p => ({ ...p, [lang.id]: !p[lang.id] }))}
+                      >
+                        <div
+                          className="lang-badge"
+                          style={{ background: lang.color + "22", color: lang.color, border: `1px solid ${lang.color}44` }}
+                        >
+                          {lang.icon}
+                        </div>
+                        <div className="lang-info">
+                          <div className="lang-name">{lang.label}</div>
+                          <div className="lang-prog-bar">
+                            <motion.div
+                              className="lang-prog-fill"
+                              style={{ background: lang.color }}
+                              animate={{ width: `${lp}%` }}
+                            />
+                          </div>
+                        </div>
+                        <span className={`lang-chevron ${isOpen ? "open" : ""}`}>▼</span>
+                      </div>
+
+                      <AnimatePresence initial={false}>
+                        {isOpen && (
+                          <motion.div
+                            className="module-list"
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2, ease: "easeInOut" }}
+                            style={{ overflow: "hidden" }}
+                          >
+                            {lang.modules.map((mod, idx) => {
+                              const isActive = activeModule.id === mod.id;
+                              const isDoneM = progress[mod.id];
+                              return (
+                                <motion.div
+                                  key={mod.id}
+                                  className={`module-item ${isActive ? "active" : ""}`}
+                                  onClick={() => selectModule(mod, lang)}
+                                  initial={{ x: -10, opacity: 0 }}
+                                  animate={{ x: 0, opacity: 1 }}
+                                  transition={{ delay: idx * 0.04 }}
+                                  style={{ "--accent": lang.color, "--accent-glow": lang.color + "22" }}
+                                >
+                                  <div className={`module-dot ${isDoneM ? "done" : isActive ? "active" : ""}`} style={isActive && !isDoneM ? { background: lang.color, borderColor: lang.color } : {}} />
+                                  <span className="module-title">{mod.title}</span>
+                                  <span className="module-duration">{mod.duration}</span>
+                                </motion.div>
+                              );
+                            })}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* CONTENT */}
+          <div className="content-area">
+            {/* Module Topbar */}
+            <div className="module-topbar">
+              <div>
+                <div className="module-breadcrumb">
+                  <span style={{ color: activeLang.color }}>{activeLang.label}</span>
+                  {" → " + activeModule.title}
+                </div>
+              </div>
+              <span className="module-time">⏱ {totalDuration}</span>
+              <motion.button
+                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                className={`quiz-btn`}
+                onClick={() => setQuiz(activeModule.quiz)}
+              >
+                ⚡ Kuis
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                className={`complete-btn ${isDone ? "done" : "undone"}`}
+                onClick={() => !isDone && markDone(activeModule.id)}
+                style={{ background: isDone ? "#10b981" : activeLang.color, color: dark ? (activeLang.id === "js" ? "#000" : "#fff") : "#fff" }}
+              >
+                {isDone ? "✓ Selesai" : "Tandai Selesai"}
+              </motion.button>
+            </div>
+
+            {/* Split View */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                className="split-view"
+                key={activeModule.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2 }}
+              >
+                {/* Theory */}
+                <div className="theory-panel">
+                  <div dangerouslySetInnerHTML={{ __html: parseMarkdown(activeModule.theory) }} />
+                </div>
+
+                {/* Code Panel */}
+                <div className="code-panel">
+                  <CodeEditorPanel
+                    code={editableCode}
+                    onCodeChange={setEditableCode}
+                    previewSrc={previewSrc}
+                    dark={dark}
+                    langColor={activeLang.color}
+                  />
+                </div>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </div>
+      </div>
+
+      {/* Quiz Modal */}
+      <AnimatePresence>
+        {quiz && (
+          <QuizModal
+            quiz={quiz}
+            onClose={() => setQuiz(null)}
+            onComplete={(correct) => {
+              if (correct) markDone(activeModule.id);
+            }}
+          />
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+
+// ─── CODE EDITOR PANEL ──────────────────────────────────────────────────────
+function CodeEditorPanel({ code, onCodeChange, previewSrc, dark, langColor }) {
+  const [tab, setTab] = useState("editor");
+  const [copied, setCopied] = useState(false);
+
+  const copy = () => {
+    navigator.clipboard.writeText(code).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    });
+  };
+
+  const consoleLines = (() => {
+    const matches = code.match(/console\.log\(([^)]+)\)/g) || [];
+    return matches.map(m => {
+      const arg = m.match(/console\.log\((.+)\)/)?.[1] || "";
+      return arg.replace(/[`"']/g, "").replace(/\$\{[^}]+\}/g, "...");
+    });
+  })();
+
+  return (
+    <>
+      <div className="code-tabs">
+        {["editor", "preview", "console"].map(t => (
+          <button
+            key={t}
+            className={`code-tab ${tab === t ? "active" : ""}`}
+            onClick={() => setTab(t)}
+            style={tab === t ? { borderBottomColor: langColor, color: langColor } : {}}
+          >
+            {t === "editor" ? "📝 Editor" : t === "preview" ? "👁 Preview" : "⌨ Console"}
+          </button>
+        ))}
+        <motion.button
+          whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+          style={{
+            marginLeft: "auto", padding: "4px 10px", borderRadius: 6,
+            border: "1px solid var(--border)", background: "var(--surface2)",
+            color: "var(--muted)", fontSize: 11, cursor: "pointer", fontFamily: "'DM Sans',sans-serif",
+            alignSelf: "center"
+          }}
+          onClick={copy}
+        >
+          {copied ? "✓ Copied!" : "Copy"}
+        </motion.button>
+      </div>
+
+      <div className="code-editor-wrap">
+        {tab === "editor" && (
+          <textarea
+            className="code-editor"
+            value={code}
+            onChange={e => onCodeChange(e.target.value)}
+            spellCheck={false}
+            autoComplete="off"
+            autoCorrect="off"
+          />
+        )}
+        {tab === "preview" && (
+          <div className="preview-wrap">
+            <div className="preview-label">🌐 Live Preview</div>
+            {previewSrc ? (
+              <iframe
+                className="preview-iframe"
+                srcDoc={previewSrc}
+                sandbox="allow-scripts"
+                title="preview"
+              />
+            ) : (
+              <div style={{
+                flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
+                flexDirection: "column", gap: 8, color: "var(--muted)", fontSize: 13
+              }}>
+                <span style={{ fontSize: 32 }}>⚡</span>
+                <span>Preview tersedia untuk kode HTML</span>
+                <span style={{ fontSize: 12, opacity: 0.6 }}>Edit kode di tab Editor</span>
+              </div>
+            )}
+          </div>
+        )}
+        {tab === "console" && (
+          <div className="preview-console">
+            {consoleLines.length === 0 ? (
+              <div style={{ color: "#6a737d", fontSize: 12 }}>
+                Tidak ada console.log() terdeteksi.<br />
+                Tambahkan console.log() di kode untuk melihat output.
+              </div>
+            ) : (
+              consoleLines.map((line, i) => (
+                <motion.div
+                  key={i} className="console-line"
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.07 }}
+                >
+                  <span className="console-arrow">›</span>
+                  <span style={{ color: "#f1fa8c" }}>{line}</span>
+                </motion.div>
+              ))
+            )}
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
